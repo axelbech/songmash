@@ -2,6 +2,7 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface Playlist {
   id: string;
@@ -29,6 +30,7 @@ interface BracketMatchup {
 
 export default function Home() {
   const { data: session } = useSession();
+  const router = useRouter();
   const [playlists, setPlaylists] = useState<Playlist[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -205,6 +207,28 @@ export default function Home() {
         .slice(0, 10)
     : [];
 
+  // Handler for starting a session
+  const handleStartSession = async () => {
+    if (!session || !selectedPlaylist || !tracks) return;
+    const host_user_id = session.user?.email || session.user?.name || "unknown";
+    const user_name = session.user?.name || host_user_id;
+    const res = await fetch("/api/session/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        host_user_id,
+        playlist_id: selectedPlaylist.id,
+        tracks,
+      }),
+    });
+    const data = await res.json();
+    if (data.sessionId) {
+      router.push(`/session/${data.sessionId}`);
+    } else {
+      alert(data.error || "Failed to create session");
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <main className="flex flex-col gap-8 items-center w-full max-w-4xl">
@@ -312,6 +336,15 @@ export default function Home() {
                 </div>
               )}
               {/* End Game section */}
+
+              {selectedPlaylist && tracks && (
+                <button
+                  className="mt-6 rounded bg-green-600 hover:bg-green-700 text-white px-8 py-3 font-bold shadow"
+                  onClick={handleStartSession}
+                >
+                  Start Session
+                </button>
+              )}
             </div>
           )}
         </div>
