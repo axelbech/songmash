@@ -212,7 +212,7 @@ export default function Home() {
     if (!session || !selectedPlaylist || !tracks) return;
     const host_user_id = session.user?.email || session.user?.name || "unknown";
     const user_name = session.user?.name || host_user_id;
-    const res = await fetch("/api/session/create", {
+    const res = await fetch("/api/game/create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

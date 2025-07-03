@@ -31,7 +31,7 @@ export default function GamePage() {
   useEffect(() => {
     if (!session || !gameId) return;
     const join = async () => {
-      await fetch("/api/session/join", {
+      await fetch("/api/game/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -65,7 +65,7 @@ export default function GamePage() {
   useEffect(() => {
     if (!gameId) return;
     const pollVotes = async () => {
-      const res = await fetch(`/api/session/votes?game_id=${gameId}&round=${currentRound}&matchup_idx=${currentMatchupIdx}`);
+      const res = await fetch(`/api/game/votes?game_id=${gameId}&round=${currentRound}&matchup_idx=${currentMatchupIdx}`);
       const data = await res.json();
       setVotes(data.votes || []);
     };
@@ -77,7 +77,7 @@ export default function GamePage() {
   // Voting handler
   const handleVote = async (trackId: string) => {
     if (!session || !gameId) return;
-    await fetch("/api/session/vote", {
+    await fetch("/api/game/vote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
