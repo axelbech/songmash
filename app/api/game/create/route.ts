@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
 
+function minimalTrack(track: any) {
+  return {
+    id: track.id,
+    name: track.name,
+    artists: Array.isArray(track.artists)
+      ? track.artists.map((a: any) => (typeof a === 'string' ? a : a.name))
+      : track.artists,
+    album: {
+      name: track.album?.name,
+      image: track.album?.images?.[0]?.url || track.album?.image,
+    },
+    duration_ms: track.duration_ms,
+    preview_url: track.preview_url,
+  };
+}
+
 function generateInitialBracket(tracks: any[]) {
+  // Only keep minimal fields for each track
+  const minimalTracks = tracks.map(minimalTrack);
   // Shuffle tracks
-  const shuffled = [...tracks].sort(() => 0.5 - Math.random());
+  const shuffled = [...minimalTracks].sort(() => 0.5 - Math.random());
   // Pair into matchups
   const matchups = [];
   let oddTrack = null;
@@ -44,13 +62,14 @@ export async function POST(req: NextRequest) {
   }
 
   // Insert game
+  const minimalTracks = tracks.map(minimalTrack);
   const { data: game, error: gameError } = await supabase
     .from("games")
     .insert([
       {
         host_user_id,
         playlist_id,
-        tracks,
+        tracks: minimalTracks,
         bracket,
         code,
         current_round: 0,

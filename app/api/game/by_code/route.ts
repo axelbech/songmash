@@ -67,17 +67,33 @@ export async function POST(req: NextRequest) {
     voteCounts[v.track_id] = (voteCounts[v.track_id] || 0) + 1;
   });
 
+  function minimalTrack(track: any) {
+    return {
+      id: track.id,
+      name: track.name,
+      artists: Array.isArray(track.artists)
+        ? track.artists.map((a: any) => (typeof a === 'string' ? a : a.name))
+        : track.artists,
+      album: {
+        name: track.album?.name,
+        image: track.album?.images?.[0]?.url || track.album?.image,
+      },
+      duration_ms: track.duration_ms,
+      preview_url: track.preview_url,
+    };
+  }
+
   // Determine winner for this matchup
   const matchup = bracket?.[currentRound]?.[currentMatchupIdx];
   if (matchup) {
     let winner: any = undefined;
     if (voteCounts[matchup.trackA.id] > (voteCounts[matchup.trackB.id] || 0)) {
-      winner = matchup.trackA;
+      winner = minimalTrack(matchup.trackA);
     } else if (voteCounts[matchup.trackB.id] > (voteCounts[matchup.trackA.id] || 0)) {
-      winner = matchup.trackB;
+      winner = minimalTrack(matchup.trackB);
     } else {
       // Tie: pick randomly
-      winner = Math.random() < 0.5 ? matchup.trackA : matchup.trackB;
+      winner = minimalTrack(Math.random() < 0.5 ? matchup.trackA : matchup.trackB);
     }
     bracket[currentRound][currentMatchupIdx].winner = winner;
   }
@@ -87,7 +103,7 @@ export async function POST(req: NextRequest) {
   let nextMatchupIdx = currentMatchupIdx + 1;
   if (nextMatchupIdx >= bracket[currentRound].length) {
     // Round finished, prepare next round
-    const winners = bracket[currentRound].map((m: any) => m.winner).filter(Boolean);
+    const winners = bracket[currentRound].map((m: any) => m.winner).filter(Boolean).map(minimalTrack);
     let oddTrack: any | null = null;
     if (winners.length % 2 === 1) {
       oddTrack = winners.pop();
@@ -115,12 +131,12 @@ export async function POST(req: NextRequest) {
       const nextMatchups: any[] = [];
       for (let i = 0; i < winners.length; i += 2) {
         if (winners[i + 1]) {
-          nextMatchups.push({ trackA: winners[i], trackB: winners[i + 1] });
+          nextMatchups.push({ trackA: minimalTrack(winners[i]), trackB: minimalTrack(winners[i + 1]) });
         } else {
           oddTrack = winners[i];
         }
       }
-      if (oddTrack) nextMatchups.push({ trackA: oddTrack, trackB: oddTrack });
+      if (oddTrack) nextMatchups.push({ trackA: minimalTrack(oddTrack), trackB: minimalTrack(oddTrack) });
       bracket.push(nextMatchups);
       nextRound = currentRound + 1;
       nextMatchupIdx = 0;

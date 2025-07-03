@@ -1,21 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-
-interface Track {
-  id: string;
-  name: string;
-  artists: { name: string }[];
-  album: { images: { url: string }[] };
-}
-
-interface BracketMatchup {
-  trackA: Track;
-  trackB: Track;
-  winner?: Track;
-}
+import { useParams, useRouter } from "next/navigation";
+import type { Track, BracketMatchup } from "@/app/lib/definitions";
 
 export default function GameParticipantPage() {
+  const router = useRouter();
   const { code } = useParams<{ code: string }>();
   const [game, setGame] = useState<any>(null);
   const [bracket, setBracket] = useState<BracketMatchup[][]>([]);
@@ -23,6 +12,7 @@ export default function GameParticipantPage() {
   const [currentMatchupIdx, setCurrentMatchupIdx] = useState(0);
   const [votes, setVotes] = useState<any[]>([]);
   const [userId, setUserId] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
   const [hasVoted, setHasVoted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [winner, setWinner] = useState<any>(null);
@@ -35,7 +25,14 @@ export default function GameParticipantPage() {
       localStorage.setItem("songmash_user_id", id);
     }
     setUserId(id);
-  }, []);
+    const storedUsername = localStorage.getItem("songmash_username");
+    if (!storedUsername) {
+      // Redirect to username entry if not set
+      router.replace(`/join/${code}`);
+      return;
+    }
+    setUsername(storedUsername);
+  }, [router, code]);
 
   // Fetch game data by code
   useEffect(() => {
@@ -85,6 +82,23 @@ export default function GameParticipantPage() {
     const interval = setInterval(pollWinner, 2000);
     return () => clearInterval(interval);
   }, [game, code]);
+
+  // Join game on mount
+  useEffect(() => {
+    if (!game || !userId || !username) return;
+    const join = async () => {
+      await fetch("/api/game/join", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          game_id: game.id,
+          user_id: userId,
+          user_name: username,
+        }),
+      });
+    };
+    join();
+  }, [game, userId, username]);
 
   const handleVote = async (trackId: string) => {
     if (!game || hasVoted || !!winner) return;

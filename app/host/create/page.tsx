@@ -2,20 +2,9 @@
 import { useSession, signIn } from "next-auth/react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import type { Track, Playlist } from "@/app/lib/definitions";
 
-interface Playlist {
-  id: string;
-  name: string;
-  images: { url: string }[];
-}
 
-interface Track {
-  id: string;
-  name: string;
-  artists: { name: string }[];
-  album: { images: { url: string }[] };
-  preview_url?: string;
-}
 
 export default function HostCreatePage() {
   const { data: session, status } = useSession();

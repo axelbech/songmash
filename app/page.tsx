@@ -10,7 +10,7 @@ export default function Home() {
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
     if (code.trim().length > 0) {
-      router.push(`/game/${code.trim().toUpperCase()}`);
+      router.push(`/join/${code.trim().toUpperCase()}`);
     }
   };
 

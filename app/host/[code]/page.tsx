@@ -1,19 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-
-interface Track {
-  id: string;
-  name: string;
-  artists: { name: string }[];
-  album: { images: { url: string }[] };
-}
-
-interface BracketMatchup {
-  trackA: Track;
-  trackB: Track;
-  winner?: Track;
-}
+import type { Track, BracketMatchup } from "@/app/lib/definitions";
 
 export default function HostGamePage() {
   const router = useRouter();
