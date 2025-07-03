@@ -49,7 +49,7 @@ export default function GamePage() {
     if (!gameId) return;
     const fetchGame = async () => {
       setLoading(true);
-      const res = await fetch(`/api/supabase/game?game_id=${gameId}`);
+      const res = await fetch(`/api/game?game_id=${gameId}`);
       const data = await res.json();
       setGameData(data.game);
       setBracket(data.game?.bracket || []);
@@ -116,11 +116,11 @@ export default function GamePage() {
               height="300"
               allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
               loading="lazy"
-              className="rounded shadow-lg"
+              className="rounded -lg"
               title={`Spotify player for ${track.id}`}
             ></iframe>
             <button
-              className="rounded bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 font-semibold shadow mt-2 w-full max-w-xs"
+              className="rounded bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 font-semibold  mt-2 w-full max-w-xs"
               onClick={() => handleVote(track.id)}
             >
               Vote
