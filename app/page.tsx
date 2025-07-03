@@ -207,8 +207,8 @@ export default function Home() {
         .slice(0, 10)
     : [];
 
-  // Handler for starting a session
-  const handleStartSession = async () => {
+  // Handler for starting a game
+  const handleStartGame = async () => {
     if (!session || !selectedPlaylist || !tracks) return;
     const host_user_id = session.user?.email || session.user?.name || "unknown";
     const user_name = session.user?.name || host_user_id;
@@ -222,10 +222,10 @@ export default function Home() {
       }),
     });
     const data = await res.json();
-    if (data.sessionId) {
-      router.push(`/session/${data.sessionId}`);
+    if (data.gameId) {
+      router.push(`/game/${data.gameId}`);
     } else {
-      alert(data.error || "Failed to create session");
+      alert(data.error || "Failed to create game");
     }
   };
 
@@ -340,9 +340,9 @@ export default function Home() {
               {selectedPlaylist && tracks && (
                 <button
                   className="mt-6 rounded bg-green-600 hover:bg-green-700 text-white px-8 py-3 font-bold shadow"
-                  onClick={handleStartSession}
+                  onClick={handleStartGame}
                 >
-                  Start Session
+                  Start Game
                 </button>
               )}
             </div>

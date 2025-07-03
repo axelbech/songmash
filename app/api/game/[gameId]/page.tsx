@@ -16,10 +16,10 @@ interface BracketMatchup {
   winner?: Track;
 }
 
-export default function SessionPage() {
+export default function GamePage() {
   const { data: session } = useSession();
-  const { sessionId } = useParams<{ sessionId: string }>();
-  const [sessionData, setSessionData] = useState<any>(null);
+  const { gameId } = useParams<{ gameId: string }>();
+  const [gameData, setGameData] = useState<any>(null);
   const [bracket, setBracket] = useState<BracketMatchup[][]>([]);
   const [currentRound, setCurrentRound] = useState(0);
   const [currentMatchupIdx, setCurrentMatchupIdx] = useState(0);
@@ -27,61 +27,61 @@ export default function SessionPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Join session on mount
+  // Join game on mount
   useEffect(() => {
-    if (!session || !sessionId) return;
+    if (!session || !gameId) return;
     const join = async () => {
       await fetch("/api/session/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          session_id: sessionId,
+          game_id: gameId,
           user_id: session.user?.email || session.user?.name || "unknown",
           user_name: session.user?.name || session.user?.email || "unknown",
         }),
       });
     };
     join();
-  }, [session, sessionId]);
+  }, [session, gameId]);
 
-  // Fetch session data
+  // Fetch game data
   useEffect(() => {
-    if (!sessionId) return;
-    const fetchSession = async () => {
+    if (!gameId) return;
+    const fetchGame = async () => {
       setLoading(true);
-      const res = await fetch(`/api/supabase/session?session_id=${sessionId}`);
+      const res = await fetch(`/api/supabase/game?game_id=${gameId}`);
       const data = await res.json();
-      setSessionData(data.session);
-      setBracket(data.session?.bracket || []);
-      setCurrentRound(data.session?.current_round || 0);
-      setCurrentMatchupIdx(data.session?.current_matchup_idx || 0);
+      setGameData(data.game);
+      setBracket(data.game?.bracket || []);
+      setCurrentRound(data.game?.current_round || 0);
+      setCurrentMatchupIdx(data.game?.current_matchup_idx || 0);
       setUsers(data.users || []);
       setLoading(false);
     };
-    fetchSession();
-  }, [sessionId]);
+    fetchGame();
+  }, [gameId]);
 
   // Poll votes for current matchup
   useEffect(() => {
-    if (!sessionId) return;
+    if (!gameId) return;
     const pollVotes = async () => {
-      const res = await fetch(`/api/session/votes?session_id=${sessionId}&round=${currentRound}&matchup_idx=${currentMatchupIdx}`);
+      const res = await fetch(`/api/session/votes?game_id=${gameId}&round=${currentRound}&matchup_idx=${currentMatchupIdx}`);
       const data = await res.json();
       setVotes(data.votes || []);
     };
     pollVotes();
     const interval = setInterval(pollVotes, 2000);
     return () => clearInterval(interval);
-  }, [sessionId, currentRound, currentMatchupIdx]);
+  }, [gameId, currentRound, currentMatchupIdx]);
 
   // Voting handler
   const handleVote = async (trackId: string) => {
-    if (!session || !sessionId) return;
+    if (!session || !gameId) return;
     await fetch("/api/session/vote", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        session_id: sessionId,
+        game_id: gameId,
         round: currentRound,
         matchup_idx: currentMatchupIdx,
         user_id: session.user?.email || session.user?.name || "unknown",
@@ -90,8 +90,8 @@ export default function SessionPage() {
     });
   };
 
-  if (loading) return <div className="p-8 text-center">Loading session...</div>;
-  if (!sessionData) return <div className="p-8 text-center">Session not found.</div>;
+  if (loading) return <div className="p-8 text-center">Loading game...</div>;
+  if (!gameData) return <div className="p-8 text-center">Game not found.</div>;
 
   const matchup = bracket?.[currentRound]?.[currentMatchupIdx];
   if (!matchup) return <div className="p-8 text-center">No matchup found.</div>;
@@ -105,7 +105,7 @@ export default function SessionPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
-      <h2 className="text-xl font-bold mb-4">Session: {sessionId}</h2>
+      <h2 className="text-xl font-bold mb-4">Game: {gameId}</h2>
       <h3 className="text-lg font-semibold mb-2">Round {currentRound + 1} - Matchup {currentMatchupIdx + 1}</h3>
       <div className="flex flex-row gap-12 justify-center items-center">
         {[matchup.trackA, matchup.trackB].map((track) => (
@@ -132,7 +132,7 @@ export default function SessionPage() {
         ))}
       </div>
       <div className="mt-8">
-        <h4 className="font-semibold mb-1">Users in session:</h4>
+        <h4 className="font-semibold mb-1">Users in game:</h4>
         <ul className="text-sm text-gray-700">
           {users.map((u) => (
             <li key={u.user_id}>{u.user_name || u.user_id}</li>
