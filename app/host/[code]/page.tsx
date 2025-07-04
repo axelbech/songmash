@@ -133,6 +133,41 @@ export default function HostGamePage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
       <h2 className="text-xl font-bold mb-4">Game Code: {code}</h2>
+      <div className="w-full max-w-4xl mb-8">
+        <h3 className="text-lg font-bold mb-2">Tournament Bracket</h3>
+        <div className="flex flex-col gap-4">
+          {bracket.map((round, roundIdx) => (
+            <div key={roundIdx} className="border-b pb-2 mb-2">
+              <div className="font-semibold mb-1">Round {roundIdx + 1}</div>
+              <div className="flex flex-wrap gap-4">
+                {round.map((matchup, matchupIdx) => (
+                  <div
+                    key={matchupIdx}
+                    className="p-2 border rounded min-w-[200px] bg-white shadow-sm"
+                    style={{
+                      background:
+                        roundIdx === currentRound && matchupIdx === currentMatchupIdx
+                          ? "#e0f2fe"
+                          : "white",
+                    }}
+                  >
+                    <div>
+                      <span className="font-medium">{matchup.trackA.name}</span>
+                      {" vs "}
+                      <span className="font-medium">{matchup.trackB.name}</span>
+                    </div>
+                    {matchup.winner && (
+                      <div className="text-green-700 text-xs mt-1">
+                        Winner: {matchup.winner.name}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
       <h3 className="text-lg font-semibold mb-2">Round {currentRound + 1} - Matchup {currentMatchupIdx + 1}</h3>
       <div className="flex flex-row gap-12 justify-center items-center">
         {[matchup.trackA, matchup.trackB].map((track) => (

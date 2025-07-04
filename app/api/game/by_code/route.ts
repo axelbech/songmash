@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
     }
     bracket[currentRound][currentMatchupIdx].winner = winner;
   }
-
+  console.log("hello")
   // Always advance matchup or round, even if no votes
   let nextRound = currentRound;
   let nextMatchupIdx = currentMatchupIdx + 1;
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
       nextMatchupIdx = 0;
     }
   }
-
+  console.log("goodbye")
   // Update game state
   await supabase.from("games").update({
     bracket,

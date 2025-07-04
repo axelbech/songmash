@@ -6,9 +6,12 @@ const handler = NextAuth({
     SpotifyProvider({
       clientId: process.env.SPOTIFY_CLIENT_ID!,
       clientSecret: process.env.SPOTIFY_CLIENT_SECRET!,
-      authorization: process.env.SPOTIFY_AUTHORIZATION_URL || "https://accounts.spotify.com/authorize",
-      // Optionally, you can add more scopes here
-      // scope: 'user-read-email playlist-read-private',
+      authorization: {
+        url: process.env.SPOTIFY_AUTHORIZATION_URL || "https://accounts.spotify.com/authorize",
+        params: {
+          scope: 'playlist-read-private playlist-read-collaborative',
+        },
+      },
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET,

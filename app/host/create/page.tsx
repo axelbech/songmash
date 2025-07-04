@@ -30,6 +30,7 @@ export default function HostCreatePage() {
         if (!res.ok) throw new Error("Failed to fetch playlists");
         const data = await res.json();
         setPlaylists(data.items);
+        console.log(`playlists: ${JSON.stringify(data.items)}`)
       } catch (err: any) {
         setError(err.message || "Unknown error");
       } finally {
