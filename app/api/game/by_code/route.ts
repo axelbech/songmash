@@ -92,13 +92,13 @@ export async function POST(req: NextRequest) {
     } else if (voteCounts[matchup.trackB.id] > (voteCounts[matchup.trackA.id] || 0)) {
       winner = minimalTrack(matchup.trackB);
     } else {
-      // Tie: pick randomly
+      // Tie or no votes: pick randomly
       winner = minimalTrack(Math.random() < 0.5 ? matchup.trackA : matchup.trackB);
     }
     bracket[currentRound][currentMatchupIdx].winner = winner;
   }
 
-  // Advance matchup or round
+  // Always advance matchup or round, even if no votes
   let nextRound = currentRound;
   let nextMatchupIdx = currentMatchupIdx + 1;
   if (nextMatchupIdx >= bracket[currentRound].length) {

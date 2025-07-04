@@ -65,6 +65,19 @@ export default function HostGamePage() {
     return () => clearInterval(interval);
   }, [game, code]);
 
+  // Poll users in game
+  useEffect(() => {
+    if (!game) return;
+    const pollUsers = async () => {
+      const res = await fetch(`/api/game/by_code?code=${code}`);
+      const data = await res.json();
+      setUsers(data.users || []);
+    };
+    pollUsers();
+    const interval = setInterval(pollUsers, 2000);
+    return () => clearInterval(interval);
+  }, [game, code]);
+
   const handleAdvance = async () => {
     await fetch("/api/game/by_code", {
       method: "POST",
@@ -88,7 +101,11 @@ export default function HostGamePage() {
   const matchup = bracket?.[currentRound]?.[currentMatchupIdx];
   if (!matchup) return <div className="p-8 text-center">No matchup found.</div>;
 
-  // Group votes by track
+  // Group votes by track, but map user_id to user_name
+  const userIdToName: Record<string, string> = {};
+  users.forEach((u: any) => {
+    userIdToName[u.user_id] = u.user_name || u.user_id;
+  });
   const votesByTrack: Record<string, string[]> = {};
   votes.forEach((v) => {
     if (!votesByTrack[v.track_id]) votesByTrack[v.track_id] = [];
@@ -130,11 +147,37 @@ export default function HostGamePage() {
               title={`Spotify player for ${track.id}`}
             ></iframe>
             <div className="mt-2 text-sm text-gray-800 font-semibold">Voted by:</div>
-            <ul className="text-xs text-gray-700">
-              {(votesByTrack[track.id] || []).map((user, idx) => (
-                <li key={idx}>{user}</li>
-              ))}
-            </ul>
+            <div style={{ position: 'relative', minHeight: 48, minWidth: 120, marginBottom: 8 }}>
+              {(votesByTrack[track.id] || []).map((userId, idx) => {
+                // Generate a random offset for each bubble (stable per userId+track)
+                const hash = (userId + track.id).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+                const x = Math.sin(hash) * 20; // -20 to +20 px
+                const y = Math.cos(hash) * 12; // -12 to +12 px
+                return (
+                  <div
+                    key={userId}
+                    style={{
+                      position: 'absolute',
+                      left: `calc(50% + ${x}px)`,
+                      top: `calc(50% + ${y}px)`,
+                      transform: 'translate(-50%, -50%)',
+                      zIndex: 1,
+                      background: '#f0f4ff',
+                      borderRadius: 9999,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      padding: '6px 14px',
+                      fontWeight: 600,
+                      color: '#2d3a5a',
+                      fontSize: 14,
+                      transition: 'all 0.2s',
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {userIdToName[userId] || userId}
+                  </div>
+                );
+              })}
+            </div>
             <div className="mt-2 text-xs text-gray-500">Total votes: {(votesByTrack[track.id] || []).length}</div>
           </div>
         ))}
@@ -142,7 +185,7 @@ export default function HostGamePage() {
       <div className="mt-8">
         <h4 className="font-semibold mb-1">Users in game:</h4>
         <ul className="text-sm text-gray-700">
-          {users.map((u: any) => (
+          {[...new Map(users.map((u: any) => [u.user_id, u])).values()].map((u: any) => (
             <li key={u.user_id}>{u.user_name || u.user_id}</li>
           ))}
         </ul>

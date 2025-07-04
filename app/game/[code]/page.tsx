@@ -16,6 +16,7 @@ export default function GameParticipantPage() {
   const [hasVoted, setHasVoted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [winner, setWinner] = useState<any>(null);
+  const [users, setUsers] = useState<any[]>([]);
 
   // Generate a random user id for this session (could be improved with auth)
   useEffect(() => {
@@ -51,6 +52,7 @@ export default function GameParticipantPage() {
       setBracket(data.game?.bracket || []);
       setCurrentRound(data.game?.current_round || 0);
       setCurrentMatchupIdx(data.game?.current_matchup_idx || 0);
+      setUsers(data.users || []);
       setLoading(false);
     };
     fetchGame();
@@ -99,6 +101,19 @@ export default function GameParticipantPage() {
     };
     join();
   }, [game, userId, username]);
+
+  // Poll users in game
+  useEffect(() => {
+    if (!game) return;
+    const pollUsers = async () => {
+      const res = await fetch(`/api/game/by_code?code=${code}`);
+      const data = await res.json();
+      setUsers(data.users || []);
+    };
+    pollUsers();
+    const interval = setInterval(pollUsers, 2000);
+    return () => clearInterval(interval);
+  }, [game, code]);
 
   const handleVote = async (trackId: string) => {
     if (!game || hasVoted || !!winner) return;
@@ -167,6 +182,17 @@ export default function GameParticipantPage() {
         ))}
       </div>
       {hasVoted && <div className="mt-6 text-green-700 font-semibold">Thank you for voting!</div>}
+      <div className="mt-8">
+        <h4 className="font-semibold mb-1">Users in game:</h4>
+        <ul className="text-sm text-gray-700">
+          {[...new Map(users.map((u: any) => [u.user_id, u])).values()].map((u: any) => (
+            <li key={u.user_id} style={u.user_id === userId ? { fontWeight: 700, color: '#2563eb' } : {}}>
+              {u.user_name || u.user_id}
+              {u.user_id === userId && ' (You)'}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 } 
