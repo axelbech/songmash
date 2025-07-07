@@ -49,9 +49,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: gameError?.message || "Game not found" }, { status: 404 });
   }
 
-  let bracket = game.bracket || [];
+  // Use the new explicit bracket format
+  let bracket = (game.bracket || { rounds: [] }) as any;
   let currentRound = game.current_round || 0;
   let currentMatchupIdx = game.current_matchup_idx || 0;
+
+  // Get the current round and matchup
+  const roundObj = bracket.rounds[currentRound];
+  const matchup = roundObj?.matches?.[currentMatchupIdx];
 
   // Get votes for this matchup
   const { data: votes } = await supabase
@@ -67,43 +72,31 @@ export async function POST(req: NextRequest) {
     voteCounts[v.track_id] = (voteCounts[v.track_id] || 0) + 1;
   });
 
-  function minimalTrack(track: any) {
-    return {
-      id: track.id,
-      name: track.name,
-      artists: Array.isArray(track.artists)
-        ? track.artists.map((a: any) => (typeof a === 'string' ? a : a.name))
-        : track.artists,
-      album: {
-        name: track.album?.name,
-        image: track.album?.images?.[0]?.url || track.album?.image,
-      },
-      duration_ms: track.duration_ms,
-      preview_url: track.preview_url,
-    };
-  }
 
   // Determine winner for this matchup
-  const matchup = bracket?.[currentRound]?.[currentMatchupIdx];
   if (matchup) {
-    let winner: any = undefined;
-    if (voteCounts[matchup.trackA.id] > (voteCounts[matchup.trackB.id] || 0)) {
-      winner = minimalTrack(matchup.trackA);
-    } else if (voteCounts[matchup.trackB.id] > (voteCounts[matchup.trackA.id] || 0)) {
-      winner = minimalTrack(matchup.trackB);
+    const votesA = voteCounts[matchup.trackA_id] || 0;
+    const votesB = matchup.trackB_id ? (voteCounts[matchup.trackB_id] || 0) : 0;
+    let winner_track_id = null;
+    if (votesA > votesB) {
+      winner_track_id = matchup.trackA_id;
+    } else if (votesB > votesA) {
+      winner_track_id = matchup.trackB_id;
     } else {
       // Tie or no votes: pick randomly
-      winner = minimalTrack(Math.random() < 0.5 ? matchup.trackA : matchup.trackB);
+      winner_track_id = Math.random() < 0.5 ? matchup.trackA_id : matchup.trackB_id;
     }
-    bracket[currentRound][currentMatchupIdx].winner = winner;
+    matchup.winner_track_id = winner_track_id;
+    matchup.votes_trackA = votesA;
+    matchup.votes_trackB = votesB;
   }
-  console.log("hello")
+
   // Always advance matchup or round, even if no votes
   let nextRound = currentRound;
   let nextMatchupIdx = currentMatchupIdx + 1;
-  if (nextMatchupIdx >= bracket[currentRound].length) {
+  if (nextMatchupIdx >= roundObj.matches.length) {
     // Round finished, prepare next round
-    const winners = bracket[currentRound].map((m: any) => m.winner).filter(Boolean).map(minimalTrack);
+    const winners = roundObj.matches.map((m: any) => m.winner_track_id).filter(Boolean);
     let oddTrack: any | null = null;
     if (winners.length % 2 === 1) {
       oddTrack = winners.pop();
@@ -128,28 +121,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ bracket, winner: winners[0] });
     } else {
       // Pair winners for next round
-      const nextMatchups: any[] = [];
+      const nextMatches: any[] = [];
+      let nextMatchupIdxGen = 0;
       for (let i = 0; i < winners.length; i += 2) {
         if (winners[i + 1]) {
-          nextMatchups.push({ trackA: minimalTrack(winners[i]), trackB: minimalTrack(winners[i + 1]) });
+          nextMatches.push({
+            match_id: `${currentRound + 2}-${nextMatchupIdxGen + 1}`,
+            trackA_id: winners[i],
+            trackB_id: winners[i + 1],
+            winner_track_id: null,
+            votes_trackA: 0,
+            votes_trackB: 0
+          });
         } else {
-          oddTrack = winners[i];
+          nextMatches.push({
+            match_id: `${currentRound + 2}-${nextMatchupIdxGen + 1}`,
+            trackA_id: winners[i],
+            trackB_id: null,
+            winner_track_id: winners[i],
+            votes_trackA: 0,
+            votes_trackB: 0
+          });
         }
+        nextMatchupIdxGen++;
       }
-      if (oddTrack) nextMatchups.push({ trackA: minimalTrack(oddTrack), trackB: minimalTrack(oddTrack) });
-      bracket.push(nextMatchups);
+      bracket.rounds.push({
+        round_number: currentRound + 2,
+        matches: nextMatches
+      });
       nextRound = currentRound + 1;
       nextMatchupIdx = 0;
     }
   }
-  console.log("goodbye")
-  // Update game state
-  await supabase.from("games").update({
+
+  const { data: updatedGame, error: updateError } = await supabase.from("games").update({
     bracket,
     current_round: nextRound,
     current_matchup_idx: nextMatchupIdx,
-    winner: null,
   }).eq("id", game.id);
+
+  if (updateError) {
+    console.log(updateError)
+    return NextResponse.json({ error: updateError.message }, { status: 500 });
+  }
+
 
   return NextResponse.json({ bracket });
 } 

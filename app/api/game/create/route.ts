@@ -18,22 +18,40 @@ function minimalTrack(track: any) {
 }
 
 function generateInitialBracket(tracks: any[]) {
-  // Only keep minimal fields for each track
   const minimalTracks = tracks.map(minimalTrack);
-  // Shuffle tracks
   const shuffled = [...minimalTracks].sort(() => 0.5 - Math.random());
-  // Pair into matchups
-  const matchups = [];
-  let oddTrack = null;
+  const matches = [];
+  let matchupIdx = 0;
   for (let i = 0; i < shuffled.length; i += 2) {
     if (shuffled[i + 1]) {
-      matchups.push({ trackA: shuffled[i], trackB: shuffled[i + 1] });
+      matches.push({
+        match_id: `1-${matchupIdx + 1}`,
+        trackA_id: shuffled[i].id,
+        trackB_id: shuffled[i + 1].id,
+        winner_track_id: null,
+        votes_trackA: 0,
+        votes_trackB: 0
+      });
     } else {
-      oddTrack = shuffled[i];
+      matches.push({
+        match_id: `1-${matchupIdx + 1}`,
+        trackA_id: shuffled[i].id,
+        trackB_id: null,
+        winner_track_id: shuffled[i].id,
+        votes_trackA: 0,
+        votes_trackB: 0
+      });
     }
+    matchupIdx++;
   }
-  // Optionally, you could store oddTrack for next round, but for now just return the first round
-  return [matchups];
+  return {
+    rounds: [
+      {
+        round_number: 1,
+        matches
+      }
+    ]
+  };
 }
 
 function generateGameCode(length = 5) {
@@ -67,11 +85,11 @@ export async function POST(req: NextRequest) {
     .from("games")
     .insert([
       {
-        host_user_id,
-        playlist_id,
-        tracks: minimalTracks,
-        bracket,
-        code,
+        host_user_id: String(host_user_id),
+        playlist_id: String(playlist_id),
+        tracks: minimalTracks as any,
+        bracket: bracket as any,
+        code: String(code),
         current_round: 0,
         current_matchup_idx: 0,
       },
