@@ -7,7 +7,7 @@ export default function HostGamePage() {
   const router = useRouter()
   const { code } = useParams<{ code: string }>()
   const [game, setGame] = useState<any>(null)
-  const [bracket, setBracket] = useState<any[][]>([])
+  const [bracket, setBracket] = useState<any>(null)
   const [currentRound, setCurrentRound] = useState(0)
   const [currentMatchupIdx, setCurrentMatchupIdx] = useState(0)
   const [votes, setVotes] = useState<any[]>([])
