@@ -14,9 +14,11 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
 
   if (!existing) {
-    const { error } = await supabase.from("game_users").insert([
-      { game_id, user_id, user_name },
-    ]);
+    const { error } = await supabase.from("game_users").insert({
+      game_id,
+      user_id,
+      user_name,
+    });
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }

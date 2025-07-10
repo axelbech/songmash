@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
     .from("votes")
     .select("user_id, track_id")
     .eq("game_id", game_id)
-    .eq("round", round)
-    .eq("matchup_idx", matchup_idx);
+    .eq("round", Number(round))
+    .eq("matchup_idx", Number(matchup_idx));
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

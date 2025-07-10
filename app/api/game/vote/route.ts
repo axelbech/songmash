@@ -5,9 +5,13 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient();
   const { game_id, round, matchup_idx, user_id, track_id } = await req.json();
 
-  const { error } = await supabase.from("votes").insert([
-    { game_id, round, matchup_idx, user_id, track_id },
-  ]);
+  const { error } = await supabase.from("votes").insert({
+    game_id,
+    round: Number(round),
+    matchup_idx: Number(matchup_idx),
+    user_id,
+    track_id,
+  });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
